@@ -29,7 +29,8 @@ char *new_string(char *str) {
   if (new_str == NULL) {
     return NULL;
   }
-  return strcpy(new_str, str);
+  return strcpy(new_str, str);  //  这里这里返回值使用赋值将局部变量赋给外部变量
+                                //  很巧妙，避免了函数执行完局部变量失效的情况!
 }
 
 int init_words(WordCount **wclist) {
@@ -47,12 +48,23 @@ ssize_t len_words(WordCount *wchead) {
      this function.
   */
     size_t len = 0;
+    while (wchead) {
+      ++len;
+      wchead = wchead->next;
+    }
     return len;
 }
 
 WordCount *find_word(WordCount *wchead, char *word) {
   /* Return count for word, if it exists */
   WordCount *wc = NULL;
+  while (wchead) {
+    if (!strcmp(wchead->word, word)) {
+      wc = wchead;
+      break;
+    }
+    wchead = wchead->next;
+  }
   return wc;
 }
 
@@ -61,7 +73,20 @@ int add_word(WordCount **wclist, char *word) {
      Otherwise insert with count 1.
      Returns 0 if no errors are encountered in the body of this function; 1 otherwise.
   */
- return 0;
+  WordCount* wchead = *wclist;
+  WordCount* wc = find_word(wchead, word);
+  if (wc) {
+    ++(wc->count);
+  } 
+  else {
+    WordCount* newwc = (WordCount*) malloc(sizeof(WordCount));
+    newwc->next = wchead;
+    newwc->count = 1;
+    newwc->word = new_string(word);
+    *wclist = newwc; // 这一步是神来之笔，局部变量无效后依然可以找到地址。
+    // wclist = &newcc; 不能这样写，局部变量失效了就找不到了。
+  }
+  return 0;
 }
 
 void fprint_words(WordCount *wchead, FILE *ofile) {

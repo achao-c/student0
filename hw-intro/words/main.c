@@ -31,7 +31,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 
 #include "word_count.h"
-
+char *new_string(char *str);
 /* Global data structure tracking the words encountered */
 WordCount *word_counts = NULL;
 
@@ -85,6 +85,28 @@ int num_words(FILE *infile)
  */
 int count_words(WordCount **wclist, FILE *infile)
 {
+  bool isword = true;
+  int size = 0;
+  char* word = (char*) malloc(MAX_WORD_LEN+1);
+  while (!feof(infile)) {
+    char ch = fgetc(infile);
+    if (ch == ' ' || ch == '\n') {
+      if (size > 1 && size <= MAX_WORD_LEN && isword) {
+        add_word(wclist, new_string(word));
+        memset(word, '\0', MAX_WORD_LEN+1);  // clear word
+      }
+      size = 0;
+      isword = true;
+    }
+    else {
+      if (isalpha(ch) && isword && size <= MAX_WORD_LEN) {
+        ch = tolower(ch);
+        word[size] = ch;
+        ++size;
+      }
+      else isword = false;
+    }
+  }
   return 0;
 }
 
@@ -94,7 +116,13 @@ int count_words(WordCount **wclist, FILE *infile)
  */
 static bool wordcount_less(const WordCount *wc1, const WordCount *wc2)
 {
-  return 0;
+  if (wc1->count < wc2->count) {
+    return true;
+  } else if (wc1->count == wc2->count) {
+    return strcmp(wc1->word, wc2->word) < 0 ? true : false;
+  } else {
+    return false;
+  }
 }
 
 // In trying times, displays a helpful message.
@@ -178,6 +206,7 @@ int main(int argc, char *argv[])
   }
   else
   {
+    count_words(&word_counts, infile);
     wordcount_sort(&word_counts, wordcount_less);
 
     printf("The frequencies of each word are: \n");
